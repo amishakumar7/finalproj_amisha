@@ -1,3 +1,4 @@
+use flate2::read::GzDecoder;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -46,7 +47,7 @@ impl Graph {
         Ok(graph)
     }
 
-    // returns the degree of a node
+    #[allow(dead_code)]
     pub fn degree(&self, node: u32) -> usize {
         self.neighbors(node).map_or(0, |neighbors| neighbors.len())
     }
@@ -54,5 +55,29 @@ impl Graph {
     // returns an iterator over all nodes in the graph
     pub fn nodes(&self) -> impl Iterator<Item = &u32> {
         self.adjacency_list.keys()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::graph::Graph;
+
+    fn sample_graph() -> Graph {
+        let mut graph = Graph::new();
+        graph.add_edge(0, 1);
+        graph.add_edge(1, 2);
+        graph.add_edge(2, 0); // Triangle: 0-1-2
+        graph.add_edge(2, 3);
+        graph.add_edge(3, 4); // No triangle here
+        graph
+    }
+
+    #[test]
+    fn test_load_graph_from_file() {
+        let graph = Graph::load_graph_from_file("test_data.txt").expect("Failed to load graph");
+        assert_eq!(graph.neighbors(0).unwrap().len(), 2);
+        assert_eq!(graph.neighbors(1).unwrap().len(), 2);
+        assert_eq!(graph.neighbors(2).unwrap().len(), 3);
     }
 }

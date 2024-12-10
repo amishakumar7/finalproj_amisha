@@ -1,47 +1,34 @@
-use std::collections::{HashMap, HashSet};
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::Path;
+mod graph;
+mod triangle_count;
+mod clustering;
 
-// Graph struct to store the adjacency list where each node maps to a vector of neighboring nodes
-pub struct Graph {
-    adjacency_list: HashMap<u32, Vec<u32>>,
-} 
+use graph::Graph;
 
-// HashMap to store each node’s connections and Vec for neighbors to allow efficient traversal
-impl Graph {
-    pub fn new() -> Self {
-        Self {
-            adjacency_list: HashMap::new(),
+fn main() {
+    // Load the graph from a file
+    let graph_file = "facebookdat.gz"; // Ensure this file is in the correct directory.
+    let graph = match Graph::load_graph_from_file(graph_file) {
+        Ok(g) => g,
+        Err(e) => {
+            eprintln!("Failed to load graph from file {}: {}", graph_file, e);
+            return;
         }
+    };
+
+    println!("Graph successfully loaded!");
+
+    // Triangle counting
+    let total_triangles = graph.count_all_triangles();
+    println!("Total triangles in the graph: {}", total_triangles);
+
+    // Local clustering coefficients
+    println!("Local Clustering Coefficients:");
+    for &node in graph.nodes() {
+        let coeff = graph.compute_local_clustering_coefficient(node);
+        println!("Node {}: Local Clustering Coefficient = {:.4}", node, coeff);
     }
 
-    pub fn add_edge(&mut self, u: u32, v: u32) {
-        self.adjacency_list.entry(u).or_insert_with(Vec::new).push(v);
-        self.adjacency_list.entry(v).or_insert_with(Vec::new).push(u);
-    }
-    
-    //load_graph_from_file reads the file, processes each line and populates the graph
-
-    pub fn load_graph_from_file(file_path: &str) -> io::Result<Self> { 
-        let mut graph = Graph::new();
-        let file = File::open(Path::new(file_path))?;
-        let reader = io::BufReader::new(file);
-
-        for line in reader.lines() {
-            let line = line?;
-            let parts: Vec<u32> = line.split_whitespace()
-                                      .filter_map(|s| s.parse().ok())
-                                      .collect();
-            if parts.len() == 2 {
-                graph.add_edge(parts[0], parts[1]);
-            }
-        }
-
-        Ok(graph)
-    }
-
-    pub fn neighbors(&self, node: u32) -> Option<&Vec<u32>> {
-        self.adjacency_list.get(&node)
-    }
+    // Global clustering coefficient
+    let avg_clustering_coeff = graph.compute_average_clustering_coefficient();
+    println!("Average (Global) Clustering Coefficient: {:.4}", avg_clustering_coeff);
 }
