@@ -6,7 +6,7 @@ use graph::Graph;
 
 fn main() {
     // Load the graph from a file
-    let graph_file = "facebookdat.gz"; // Ensure this file is in the correct directory.
+    let graph_file = "facebookdat.gz"; 
     let graph = match Graph::load_graph_from_file(graph_file) {
         Ok(g) => g,
         Err(e) => {
